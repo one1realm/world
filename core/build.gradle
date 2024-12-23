@@ -1,0 +1,16 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+  compileOnly "org.projectlombok:lombok:$lombokVersion"
+  testCompileOnly "org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion"
+  testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.14.2'
+}
+
+test {
+  useJUnitPlatform()
+}
