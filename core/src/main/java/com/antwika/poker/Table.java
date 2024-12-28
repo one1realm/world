@@ -87,11 +87,6 @@ public class Table {
         final var stateBuilder = state.toBuilder();
         final var newBlinds = Arrays.stream(blinds).boxed().collect(Collectors.toList());
         stateBuilder.blinds(newBlinds);
-
-        /*for (int i = 0; i < newBlinds.size(); i++) {
-            if (newBlinds.get(0) == 0) stateBuilder.
-        }*/
-
         table.getStates().add(stateBuilder.build());
     }
 
@@ -233,6 +228,10 @@ public class Table {
     }
 
     private static State deliverPots(AgentRepository agentRepository, State state) {
+        if (!State.isShowdown(state)) {
+            return state;
+        }
+
         final var newStateBuilder = state.toBuilder();
 
         final var seats = new ArrayList<>(List.copyOf(state.getSeats()));
@@ -316,13 +315,13 @@ public class Table {
     private static State promptAndHandlePlayerAction(AgentRepository agentRepository, State state) {
         final var seat = State.getCurrentSeatToAct(state);
         final var seatIndex = State.getSeatIndexOfSeat(state, seat);
-        final var stack = seat.getStack();
         final var agent = State.getAgentOfSeat(agentRepository, state, seat);
 
         final var roundIndex = state.getRoundIndex();
         final var biggestBet = State.getBiggestBet(state, roundIndex);
         final var committed = State.getCommitted(state, roundIndex, seatIndex);
         final var diff = biggestBet - committed;
+        final var stack = seat.getStack();
         final var commitMin = Math.min(diff, stack);
         final var commitMax = stack;
 
@@ -334,7 +333,6 @@ public class Table {
         final var mutableSeats = new ArrayList<>(List.copyOf(state.getSeats()));
         final var seatBuilder = mutableSeats.get(seatIndex).toBuilder();
 
-        // TODO: Update seat "mucked"
         if (commit < commitMin) {
             seatBuilder.mucked(true);
             System.out.printf("%s: folds%n", agent.getName());
@@ -346,19 +344,15 @@ public class Table {
             System.out.printf("%s: bets: %d%n", agent.getName(), commit);
         }
 
-        // TODO: Update seat "acted"
         seatBuilder.acted(true);
 
-        // TODO: Deduct commit amount from seat stack
         if (commit > 0) seatBuilder.stack(stack - commit);
 
-        final var stateBuilder = state.toBuilder();
-
-        // TODO: Update seats array
         mutableSeats.set(seatIndex, seatBuilder.build());
+
+        final var stateBuilder = state.toBuilder();
         stateBuilder.seats(mutableSeats);
 
-        // TODO: Update pots
         if (commit > 0) {
             final var pots = new ArrayList<>(List.copyOf(state.getPots()));
             final var commits = new ArrayList<>(List.copyOf(pots.get(roundIndex)));
@@ -394,10 +388,7 @@ public class Table {
             state = dealCommunityCards(state);
             state = incrementRoundIndex(state);
             state = resetSeatActions(state);
-
-            if (State.isShowdown(state)) {
-                state = deliverPots(agentRepository, state);
-            }
+            state = deliverPots(agentRepository, state);
         }
 
         // Add new state

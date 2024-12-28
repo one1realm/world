@@ -1,5 +1,9 @@
 package com.antwika;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public class Hand {
     public static long DECK = 0b1111111111111111111111111111111111111111111111111111L;
     public static long NONE = 0b0000000000000L;
@@ -1098,33 +1102,37 @@ public class Hand {
         return longNotation.toString();
     }
 
-    public static String rankToLogNotation(long rank, boolean forceSingular) {
-        if (Long.bitCount(rank & TWOS) > 1 && !forceSingular) return "Twos";
+    public static String rankToLogNotationSingular(long rank) {
         if (Long.bitCount(rank & TWOS) > 0) return "Two";
-        if (Long.bitCount(rank & THREES) > 1 && !forceSingular) return "Threes";
         if (Long.bitCount(rank & THREES) > 0) return "Three";
-        if (Long.bitCount(rank & FOURS) > 1 && !forceSingular) return "Fours";
         if (Long.bitCount(rank & FOURS) > 0) return "Four";
-        if (Long.bitCount(rank & FIVES) > 1 && !forceSingular) return "Fives";
         if (Long.bitCount(rank & FIVES) > 0) return "Five";
-        if (Long.bitCount(rank & SIXES) > 1 && !forceSingular) return "Sixes";
         if (Long.bitCount(rank & SIXES) > 0) return "Six";
-        if (Long.bitCount(rank & SEVENS) > 1 && !forceSingular) return "Sevens";
         if (Long.bitCount(rank & SEVENS) > 0) return "Seven";
-        if (Long.bitCount(rank & EIGHTS) > 1 && !forceSingular) return "Eights";
         if (Long.bitCount(rank & EIGHTS) > 0) return "Eight";
-        if (Long.bitCount(rank & NINES) > 1 && !forceSingular) return "Nines";
         if (Long.bitCount(rank & NINES) > 0) return "Nine";
-        if (Long.bitCount(rank & TENS) > 1 && !forceSingular) return "Tens";
         if (Long.bitCount(rank & TENS) > 0) return "Ten";
-        if (Long.bitCount(rank & JACKS) > 1 && !forceSingular) return "Jacks";
         if (Long.bitCount(rank & JACKS) > 0) return "Jack";
-        if (Long.bitCount(rank & QUEENS) > 1 && !forceSingular) return "Queens";
         if (Long.bitCount(rank & QUEENS) > 0) return "Queen";
-        if (Long.bitCount(rank & KINGS) > 1 && !forceSingular) return "Kings";
         if (Long.bitCount(rank & KINGS) > 0) return "King";
-        if (Long.bitCount(rank & ACES) > 1 && !forceSingular) return "Aces";
         if (Long.bitCount(rank & ACES) > 0) return "Ace";
+        return "Unknown";
+    }
+
+    public static String rankToLogNotationPlural(long rank) {
+        if (Long.bitCount(rank & TWOS) > 0) return "Twos";
+        if (Long.bitCount(rank & THREES) > 0) return "Threes";
+        if (Long.bitCount(rank & FOURS) > 0) return "Fours";
+        if (Long.bitCount(rank & FIVES) > 0) return "Fives";
+        if (Long.bitCount(rank & SIXES) > 0) return "Sixes";
+        if (Long.bitCount(rank & SEVENS) > 0) return "Sevens";
+        if (Long.bitCount(rank & EIGHTS) > 0) return "Eights";
+        if (Long.bitCount(rank & NINES) > 0) return "Nines";
+        if (Long.bitCount(rank & TENS) > 0) return "Tens";
+        if (Long.bitCount(rank & JACKS) > 0) return "Jacks";
+        if (Long.bitCount(rank & QUEENS) > 0) return "Queens";
+        if (Long.bitCount(rank & KINGS) > 0) return "Kings";
+        if (Long.bitCount(rank & ACES) > 0) return "Aces";
         return "Unknown";
     }
 
@@ -1136,8 +1144,48 @@ public class Hand {
         final var kickers = Hand.kickersFromValue(value);
 
         final var longNotation = new StringBuilder();
+
+        if (type == Hand.STRAIGHT || type == Hand.FLUSH || type == Hand.STRAIGHT_FLUSH) {
+            longNotation.append(Hand.rankToLogNotationSingular(major));
+            longNotation.append("-high ");
+            longNotation.append(typeToLongNotation(type));
+            return longNotation.toString();
+        }
+
         longNotation.append(typeToLongNotation(type));
-        longNotation.append(", ");
+
+        if (major > 0) {
+            longNotation.append(" of ");
+            longNotation.append(Hand.rankToLogNotationPlural(major));
+        }
+
+        if (minor > 0) {
+            longNotation.append(" and ");
+            longNotation.append(Hand.rankToLogNotationPlural(minor));
+        }
+
+        if (Long.bitCount(kickers) > 0) {
+          longNotation.append(" with kicker ");
+        }
+
+        var k = kickers;
+        final var list = new ArrayList<String>();
+        for (int i = 0; i < 5 && i < Long.bitCount(kickers); i++) {
+            final var highestKicker = Long.highestOneBit(k);
+            list.add(rankToLogNotationSingular(Long.highestOneBit(k)));
+            k &= (~highestKicker);
+        }
+
+        final var itemCount = list.size();
+
+        if (itemCount >= 1) {
+            final var lastItem = list.remove(list.size() - 1);
+            longNotation.append(String.join(", ", list));
+            if (itemCount > 1) {
+                longNotation.append(" and ");
+            }
+            longNotation.append(lastItem);
+        }
 
         return longNotation.toString();
     }
